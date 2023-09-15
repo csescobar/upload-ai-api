@@ -18,6 +18,19 @@ export async function uploadVideosRoute(app: FastifyInstance) {
     },
   })
 
+  function deleteTmpVideos() {
+    const filesPath = path.resolve(__dirname, "..", "..", "tmp")
+    fs.readdir(filesPath, (err, files) => {
+      if (err) throw err
+
+      for (const file of files) {
+        fs.unlink(path.join(filesPath, file), (err) => {
+          if (err) throw err
+        })
+      }
+    })
+  }
+
   app.post("/videos/upload", async (request, reply) => {
     const data = await request.file()
 
@@ -34,6 +47,8 @@ export async function uploadVideosRoute(app: FastifyInstance) {
     const fileName = `${Date.now()}${extension}`
     const uploadPath = path.resolve(__dirname, "..", "..", "tmp", fileName)
 
+    //delete all files in tmp folder
+    deleteTmpVideos()
     await pump(data.file, fs.createWriteStream(uploadPath))
 
     const video = await prisma.video.create({
@@ -64,6 +79,9 @@ export async function createTranscriptionRoute(app: FastifyInstance) {
     if (!video) {
       return reply.status(404).send({ error: "Video not found" })
     }
+    if (video.transcription) {
+      return video.transcription
+    }
 
     const videoPath = video.path
     const audioReadStream = createReadStream(videoPath)
@@ -82,7 +100,43 @@ export async function createTranscriptionRoute(app: FastifyInstance) {
         transcription: response.text,
       },
     })
-    
+
     return response.text
+  })
+}
+
+export async function generateAiCompletionRoute(app: FastifyInstance) {
+  app.post("/ai/completion", async (req, reply) => {
+    const bodySchema = z.object({
+      videoId: z.string().uuid(),
+      template: z.string(),
+      temperature: z.number().min(0).max(1).default(0.5),
+    })
+    const { videoId, template, temperature } = bodySchema.parse(req.body)
+
+    const video = await prisma.video.findUniqueOrThrow({
+      where: { id: videoId },
+    })
+
+    if (!video) {
+      return reply.status(404).send({ error: "Video not found" })
+    }
+
+    if (!video.transcription) {
+      return reply.status(400).send({ error: "Video not transcribed" })
+    }
+
+    const promptMessage = template.replace(
+      "{transcription}",
+      video.transcription
+    )
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo-16k",
+      temperature,
+      messages: [{ role: "user", content: promptMessage }],
+    })
+
+    return response
   })
 }

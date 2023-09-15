@@ -1,4 +1,5 @@
 import { fastify } from "fastify"
+import { fastifyCors } from "@fastify/cors"
 import {
   createPromptRoute,
   deletePromptRoute,
@@ -6,9 +7,13 @@ import {
   getPromptByIdRoute,
   updatePromptRoute,
 } from "./routes/prompts-routes"
-import { createTranscriptionRoute, uploadVideosRoute } from "./routes/video-routes"
+import { createTranscriptionRoute, generateAiCompletionRoute, uploadVideosRoute } from "./routes/video-routes"
 
 const app = fastify()
+
+app.register(fastifyCors, {
+  origin: "*",
+})
 
 app.register(getAllPromptsRoute)
 app.register(getPromptByIdRoute)
@@ -17,6 +22,7 @@ app.register(updatePromptRoute)
 app.register(deletePromptRoute)
 app.register(uploadVideosRoute)
 app.register(createTranscriptionRoute)
+app.register(generateAiCompletionRoute)
 
 app
   .listen({

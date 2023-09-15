@@ -1,18 +1,30 @@
 # @name upload
 POST http://localhost:3333/videos/upload
 Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="file"; filename="example.mp3"
+Content-Disposition: form-data; name="file"; filename="Meu app Expo não estava rodando E AGORA!_ (Upgrade no Expo).mp3"
 Content-Type: audio/mpeg
 
-< ./example.mp3
+< ../Vídeos/Meu app Expo não estava rodando E AGORA!_ (Upgrade no Expo).mp3
 ------WebKitFormBoundary7MA4YWxkTrZu0gW--
 
 ###
 
 # @name transcription
-POST http://localhost:3333/videos/188bd0f6-9078-4274-83a2-142bcfa26c14/transcription
+POST http://localhost:3333/videos/1333e3df-faf1-4442-a08b-b4e07450b359/transcription
 Content-Type: application/json
 
 {
-  "prompt": "What is the meaning of life?"
+  "prompt": "Expo upgrade"
+}
+
+###
+
+# @name generate-ai-completions
+POST http://localhost:3333/ai/completion
+Content-Type: application/json
+
+{
+  "videoId": "1333e3df-faf1-4442-a08b-b4e07450b359",
+  "temperature": 0.5,
+  "template": "Gere um resumo sucinto da transcrição do video informada a seguir: '''{transcription}'''"
 }
